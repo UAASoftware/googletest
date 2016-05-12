@@ -4354,6 +4354,8 @@ UnitTestImpl::UnitTestImpl(UnitTest* parent)
   listeners()->SetDefaultResultPrinter(new PrettyUnitTestResultPrinter);
 }
 
+static OsStackTraceGetter STATIC_os_stack_trace_getter_;
+
 UnitTestImpl::~UnitTestImpl() {
   // Deletes every TestCase.
   ForEach(test_cases_, internal::Delete<TestCase>);
@@ -4361,7 +4363,7 @@ UnitTestImpl::~UnitTestImpl() {
   // Deletes every Environment.
   ForEach(environments_, internal::Delete<Environment>);
 
-  delete os_stack_trace_getter_;
+  if (os_stack_trace_getter_ != &STATIC_os_stack_trace_getter_) delete os_stack_trace_getter_;
 }
 
 // Adds a TestProperty to the current TestResult object when invoked in a
@@ -4904,10 +4906,11 @@ void UnitTestImpl::ListTestsMatchingFilter() {
 // Does nothing if the input and the current OS stack trace getter are
 // the same; otherwise, deletes the old getter and makes the input the
 // current getter.
+
 void UnitTestImpl::set_os_stack_trace_getter(
     OsStackTraceGetterInterface* getter) {
   if (os_stack_trace_getter_ != getter) {
-    delete os_stack_trace_getter_;
+    if (os_stack_trace_getter_ != &STATIC_os_stack_trace_getter_) delete os_stack_trace_getter_;
     os_stack_trace_getter_ = getter;
   }
 }
@@ -4920,7 +4923,8 @@ OsStackTraceGetterInterface* UnitTestImpl::os_stack_trace_getter() {
 #ifdef GTEST_OS_STACK_TRACE_GETTER_
     os_stack_trace_getter_ = new GTEST_OS_STACK_TRACE_GETTER_;
 #else
-    os_stack_trace_getter_ = new OsStackTraceGetter;
+    //os_stack_trace_getter_ = new OsStackTraceGetter;
+      os_stack_trace_getter_ = &STATIC_os_stack_trace_getter_;
 #endif  // GTEST_OS_STACK_TRACE_GETTER_
   }
 
